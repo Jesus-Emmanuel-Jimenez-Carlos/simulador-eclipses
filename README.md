@@ -4,6 +4,20 @@
 [![Stack](https://img.shields.io/badge/Tech-HTML5%20%7C%20TailwindCSS%20%7C%20Canvas2D-f59e0b?style=for-the-badge)](https://developer.mozilla.org/es/docs/Web/API/Canvas_API)
 [![Licencia](https://img.shields.io/badge/Licencia-MIT-green?style=for-the-badge)](LICENSE)
 
+
+[
+
+](https://jesus-emmanuel-jimenez-carlos.github.io/simulador-eclipses/)
+
+
+
+[
+
+](https://jesus-emmanuel-jimenez-carlos.github.io/simulador-eclipses/)
+
+🌌 Haz clic en la imagen o en el botón para iniciar la experiencia interactiva en tiempo real.
+
+
 > **Una inmersión interactiva en la sizigia cósmica.** Explora las leyes del movimiento planetario, proyecta conos de umbra en tiempo real y contempla las geometrías exactas que desencadenan los eclipses solares y lunares a lo largo de un ciclo orbital de 365 días.
 
 ---
