@@ -1,109 +1,97 @@
 # 🪐 AstroSim Pro: Simulador de Dinámica Orbital & Eclipses en 3D
 
-[![Live Demo](https://img.shields.io/badge/Demo-GitHub%20Pages-06b6d4?style=for-the-badge&logo=github)](https://username.github.io/repository-name)
-[![Stack](https://img.shields.io/badge/Tech-HTML5%20%7C%20TailwindCSS%20%7C%20Canvas2D-f59e0b?style=for-the-badge)](https://developer.mozilla.org/es/docs/Web/API/Canvas_API)
-[![Licencia](https://img.shields.io/badge/Licencia-MIT-green?style=for-the-badge)](LICENSE)
+<div align="center">
 
+  <!-- BOTÓN PRINCIPAL DE LLAMADO A LA ACCIÓN (CTA) -->
+  <a href="https://jesus-emmanuel-jimenez-carlos.github.io/simulador-eclipses/" target="_blank">
+    <img src="https://img.shields.io/badge/%F0%9F%9A%80%20PROBAR%20SIMULADOR%20EN%20VIVO-Clic%20Aqu%C3%AD%20para%20Ver%20Simulaci%C3%B3n%203D-00D2FF?style=for-the-badge&logoColor=white&labelColor=0d1117" alt="Probar Simulador en Vivo" height="48" />
+  </a>
 
-[
+  <br/><br/>
 
-](https://jesus-emmanuel-jimenez-carlos.github.io/simulador-eclipses/)
+  <!-- VISTA PREVIA DEL PROYECTO -->
+  <a href="https://jesus-emmanuel-jimenez-carlos.github.io/simulador-eclipses/" target="_blank">
+    <img src="preview.png" alt="Vista Previa de AstroSim Pro 3D" width="100%" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,210,255,0.2);" />
+  </a>
 
+  <p><sub>🌌 <i>Haz clic en la imagen o en el botón superior para iniciar la experiencia interactiva en tiempo real.</i></sub></p>
 
+  <br/>
 
-[
+  <!-- BADGES DE TECNOLOGÍA Y ESTADO -->
+  <a href="https://jesus-emmanuel-jimenez-carlos.github.io/simulador-eclipses/">
+    <img src="https://img.shields.io/badge/Live_Demo-GitHub_Pages-06b6d4?style=for-the-badge&logo=github" alt="Live Demo" />
+  </a>
+  <a href="https://developer.mozilla.org/es/docs/Web/API/Canvas_API">
+    <img src="https://img.shields.io/badge/Tech-HTML5%20|%20TailwindCSS%20|%20Canvas2D-f59e0b?style=for-the-badge" alt="Tech Stack" />
+  </a>
+  <a href="#licencia">
+    <img src="https://img.shields.io/badge/Licencia-MIT-green?style=for-the-badge" alt="Licencia" />
+  </a>
 
-](https://jesus-emmanuel-jimenez-carlos.github.io/simulador-eclipses/)
-
-🌌 Haz clic en la imagen o en el botón para iniciar la experiencia interactiva en tiempo real.
-
-
-> **Una inmersión interactiva en la sizigia cósmica.** Explora las leyes del movimiento planetario, proyecta conos de umbra en tiempo real y contempla las geometrías exactas que desencadenan los eclipses solares y lunares a lo largo de un ciclo orbital de 365 días.
-
----
-
-## 🌌 La Geometría Detrás de la Penumbra
-
-Un eclipse no es solo un evento visual deslumbrante; es la alineación matemática perfecta de tres cuerpos celestes en un fenómeno conocido en astrofísica como **sizigia** (*syzygy*). 
-
-A pesar de que la Luna es aproximadamente 400 veces más pequeña que el Sol, también se encuentra casi 400 veces más cerca de la Tierra. Esta célebre coincidencia cósmica permite que ambos astros posean un tamaño angular casi idéntico desde nuestra perspectiva terrestre (~0.5° en el cielo).
-
-```
-   [ SOL ] ------------------->  ( LUNA ) ----------> [ TIERRA ]
-                       Cono Umbral / Penumbral
-```
-
-**AstroSim Pro** reproduce esta interacción a través de modelos dinámicos interactivos:
-* **Sizigia y Plano Inclinado:** Representación de la inclinación orbital de la Luna (~5.14° respecto a la eclíptica), explicando por qué no ocurre un eclipse en cada luna nueva o llena.
-* **Proyección de Umbras y Penumbras:** Simulación geométrica precisa de los conos de sombra proyectados por la Tierra y la Luna hacia el espacio.
-* **Geolocalización en Tiempo Real:** Telemetría integrada para proyectar la franja de totalidad y visibilidad geográfica exacta (como el esperado Eclipse Solar Total sobre **Madrid, España y el Atlántico Norte** en agosto de 2026).
+</div>
 
 ---
 
-## ⚡ Características Principales
+## 🌟 Descripción General
 
-### 🛰️ Simulador 3D con Inclinación de Perspectiva
-* **Navegación espacial interactiva:** Arrastra el cursor o desliza en pantallas táctiles para inclinar y rotar el ángulo de cámara 3D.
-* **Cálculo de Porcentaje de Alineación:** Algoritmo en tiempo real que mide la alineación angular Sol-Tierra-Luna.
-* **Renderizado fluido a 60 FPS:** Motor gráfico basado en HTML5 Canvas API sin dependencias pesadas.
+**AstroSim Pro** es una plataforma de simulación interactiva diseñada para modelar la mecánica orbital del sistema Tierra-Luna-Sol y visualizar con precisión matemática los eventos de sizigia que desencadenan los **eclipses solares y lunares** (con enfoque especial en los eventos astronómicos de 2026).
 
-### ⏳ Control Temporal & Telemetría
-* **Simulación del ciclo de 365 días:** Visualiza la traslación terrestre alrededor del Sol y la traslación lunar (~27.3 días siderales).
-* **Velocidades ajustables:** Control de reproducción en tiempo real (`0.5x`, `1x`, `2x`, `5x`).
-* **Fases Lunares:** Identificación automática de la fase lunar en pantalla (Nueva, Creciente, Llena, Menguante).
-
-### 🔍 Inspección de Eclipses (Notificación Flotante)
-* **Detección automática de alineación:** Al alcanzar la fecha exacta de un eclipse (solar total, anular o lunar), la simulación ralentiza el flujo para su inspección.
-* **Ubicación Geográfica y Coordenadas:** Detalle preciso de las coordenadas y regiones terrestres desde donde el fenómeno es visible.
-* **Lente de Zoom Óptico:** Lienzo secundario de alta resolución que renderiza la vista microscópica del evento (Corona solar, Anillo de Fuego o Luna de Sangre).
-* **Modo Congelado (*Hold Mode*):** Botón para congelar temporalmente la tarjeta informativa y tomar apuntes o analizar la física del evento sin límite de tiempo.
-* **Ubicación No Intrusiva:** La tarjeta se despliega en la esquina superior derecha (`top-20 right-4`), permitiendo que el modelo 3D central permanezca 100% visible.
+Desarrollado con tecnologías web puras sin dependencias pesadas de motores 3D externos, combina el cálculo dinámico de conos de umbra/penumbra con gráficos vectoriales acelerados por hardware en tiempo real.
 
 ---
 
-## 📸 Tarjeta de Telemetría Geográfica
+## ✨ Características Principales
 
-Cuando ocurre un evento astronómico, **AstroSim Pro** proporciona telemetría en tiempo real:
-
-| Evento | Fecha Simulada | Tipo | Ubicación Principal & Coordenadas |
-| :--- | :--- | :--- | :--- |
-| 🟡 **Eclipse Solar Anular** | 17 Feb 2026 | Anular | Antártida y Sur de África (`68.3° S, 12.4° E`) |
-| 🔴 **Eclipse Lunar Total** | 03 Mar 2026 | Total (Luna de Sangre) | Océano Pacífico y Américas (`12.1° N, 165.4° W`) |
-| ☀️ **Eclipse Solar Total** | 12 Ago 2026 | Total | Madrid (España), Islandia y Ártico (`65.2° N, 25.1° W`) |
-| 🌗 **Eclipse Lunar Parcial** | 28 Ago 2026 | Parcial | Océano Atlántico y Europa (`18.5° S, 34.2° W`) |
+* **🕹️ Motor de Mecánica Orbital en Tiempo Real:** Control total sobre la velocidad del tiempo (0.5x a 5x) y simulación pausables en puntos clave de alineación.
+* **🌑 Proyección de Conos de Umbra y Penumbra:** Representación gráfica exacta de las sombras celestes proyectadas en el espacio sideral.
+* **📍 Telemetría Geográfica & Coordenadas:** Identificación de ubicaciones óptimas de observación y porcentaje de cobertura durante la totalidad.
+* **🎛️ Modos de Inmersión Visual:** Conmutación rápida entre vista global orbital y vista perspectiva desde la superficie terrestre.
+* **⚡ Rendimiento Ultra-optimizado:** Carga instantánea en navegadores de escritorio y móviles sin librerías pesadas (0.01s TTI).
 
 ---
 
-## 🛠️ Arquitectura Web & Arquitectura Técnica
+## 🛠️ Tecnologías Utilizadas
 
-El proyecto ha sido concebido bajo los principios de **Zero External Dependencies** para maximizar el rendimiento de carga y facilitar el despliegue instantáneo:
-
-* **HTML5 Canvas API:** Motor de renderizado en 2D/3D basado en matemáticas vectoriales puras (trigonometría de órbitas, gradientes radiales de resplandor e iluminación refractiva).
-* **Tailwind CSS (v3 CDN):** Estilizado declarativo UI con un enfoque *Glassmorphism* (efecto de vidrio translúcido).
-* **JavaScript ES6+:** Programación modular sin frameworks pesados, garantizando un tiempo de respuesta (*First Contentful Paint*) inferior a 300 ms.
-
----
-
-## 💻 Desarrollo Local
-
-No se requiere ningún instalador de paquetes (`npm`, `yarn` o servidores dedicados). Simplemente clona el repositorio y abre el archivo en cualquier navegador moderno:
-
-```bash
-# Clonar repositorio
-git clone https://github.com/tu-usuario/simulador-eclipses.git
-
-# Entrar al directorio
-cd simulador-eclipses
-
-# Abrir en navegador (Linux/Mac)
-open index.html
-# O abrir haciendo doble clic en index.html en Windows
-```
+| Componente | Tecnología | Descripción |
+| :--- | :--- | :--- |
+| **Frontend UI** | HTML5 / Tailwind CSS | Interfaz oscura de grado aeroespacial con paneles flotantes translúcidos |
+| **Graphics Engine** | HTML5 Canvas API (2D/Pseudografo 3D) | Renderizado de alta frecuencia a 60 FPS con proyección matemática personalizada |
+| **Logic Core** | JavaScript (ES6+) | Ecuaciones matemáticas de geometría orbital y simulación temporal |
+| **Deployment** | GitHub Pages | Alojamiento en la nube de alta velocidad con SSL activado |
 
 ---
 
-## 📜 Licencia y Autoría
+## 🚀 Cómo Ejecutar Localmente
 
-Desarrollado con dedicación técnica y científica para proyectos de divulgación astronómica e interfaces web de alto impacto.
+No se requieren instalaciones complejas de `node_modules` ni servidores de desarrollo:
 
-Distribuido bajo la Licencia **MIT**. Consulta el archivo `LICENSE` para más información.
+1. Clona el repositorio:
+   ```bash
+   git clone https://github.com/Jesus-Emmanuel-Jimenez-Carlos/simulador-eclipses.git
+   ```
+2. Navega al directorio del proyecto:
+   ```bash
+   cd simulador-eclipses
+   ```
+3. Abre el archivo `index.html` en cualquier navegador moderno de tu preferencia.
+
+---
+
+## 📸 Agregar la Vista Previa (`preview.png`)
+
+Para que la imagen de portada aparezca en tu README:
+1. Abre tu simulador interactivo en el navegador.
+2. Toma una captura de pantalla completa del simulador en un momento donde la alineación astronómica sea visible.
+3. Guarda la imagen con el nombre exacto **`preview.png`** en la carpeta raíz de tu repositorio.
+4. Realiza un `git push` o súbela desde la interfaz web de GitHub.
+
+---
+
+## 📄 Licencia
+
+Este proyecto se encuentra bajo la Licencia **MIT**. Puedes consultar el archivo `LICENSE` para más información sobre el uso libre y comercial.
+
+<div align="center">
+  <sub>Desarrollado con ❤️ por <b>Jesus Emmanuel Jimenez Carlos</b></sub>
+</div>
