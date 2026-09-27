@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstroSim Pro - Simulador de Eclipses y Dinámica Orbital</title>
+    
+    <!-- Tailwind CSS CDN para estilizado fluido -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Iconset -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030712;
+            color: #f3f4f6;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Paneles de vidrio templado translúcido */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .glass-panel-gold {
+            background: rgba(18, 16, 28, 0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(251, 191, 36, 0.35);
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.7), 0 0 25px rgba(245, 158, 11, 0.15);
+        }
+
+        /* Efectos de resplandor dinámico */
+        .glow-cyan {
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+        }
+        
+        /* Animación de entrada suave para la tarjeta superior derecha */
+        .card-slide-in {
+            animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideInRight {
+            0% {
+                opacity: 0;
+                transform: translateX(40px) scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        /* Contenedor principal de renderizado 3D/2D */
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Efecto de pulso para badges de eventos activados */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.96); opacity: 0.8; }
+            50% { transform: scale(1.04); opacity: 1; }
+            100% { transform: scale(0.96); opacity: 0.8; }
+        }
+        .pulse-effect {
+            animation: pulse-ring 2s infinite ease-in-out;
+        }
+
+        /* Transición para la barra de tiempo restante */
+        .progress-bar-fill {
+            transition: width 0.1s linear;
+        }
+    </style>
+</head>
+<body class="relative h-screen w-screen bg-[#030712] text-slate-100 overflow-hidden">
+
+    <!-- Lienzo interactivo principal -->
+    <div id="canvas-container">
+        <canvas id="astroCanvas"></canvas>
+    </div>
+
+    <!-- Barra superior de título y telemetría de fecha -->
+    <header class="absolute top-4 left-4 right-4 z-20 flex flex-col md:flex-row items-center justify-between gap-4 pointer-events-none">
+        
+        <!-- Marca y Título del Simulador -->
+        <div class="glass-panel px-5 py-3 rounded-2xl flex items-center gap-3 pointer-events-auto border-cyan-500/30">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-500 to-yellow-300 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-amber-500/30">
+                <i class="fa-solid fa-sun"></i>
+            </div>
+            <div>
+                <h1 class="font-black text-lg tracking-wide text-white leading-tight">AstroSim <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Pro 3D</span></h1>
+                <p class="text-xs text-slate-400">Modelo Interactivo de Mecánica Orbital</p>
+            </div>
+        </div>
+
+        <!-- Visualizador Central de Tiempo e Identificador Lunar -->
+        <div class="glass-panel px-6 py-2.5 rounded-2xl flex items-center gap-6 pointer-events-auto border-amber-500/20">
+            <div class="text-center">
+                <span class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold block">Fecha Simulada</span>
+                <span id="current-date-display" class="text-xl font-bold font-mono text-amber-400">01 ENE 2026</span>
+            </div>
+            <div class="h-8 w-[1px] bg-slate-700/60"></div>
+            <div class="text-center">
+                <span class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold block">Día Orbital</span>
+                <span id="day-counter-display" class="text-xl font-bold font-mono text-cyan-400">Día 1 / 365</span>
+            </div>
+            <div class="h-8 w-[1px] bg-slate-700/60 hidden sm:block"></div>
+            <div class="text-center hidden sm:block">
+                <span class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold block">Fase Lunar</span>
+                <span id="lunar-phase-display" class="text-sm font-semibold text-slate-200">Nueva</span>
+            </div>
+        </div>
+
+        <!-- Controles de Velocidad y Reproducción -->
+        <div class="glass-panel p-2 rounded-2xl flex items-center gap-2 pointer-events-auto">
+            <!-- Botón Pausa / Reanudar -->
+            <button id="btn-toggle-play" title="Pausar / Reanudar Simulación" class="w-10 h-10 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center font-bold transition-all duration-200 glow-cyan">
+                <i class="fa-solid fa-pause text-base" id="icon-play-pause"></i>
+            </button>
+            
+            <!-- Botón Reiniciar Ciclo -->
+            <button id="btn-reset-year" title="Reiniciar Ciclo Anual (Día 1)" class="w-10 h-10 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors border border-slate-700/50">
+                <i class="fa-solid fa-rotate-left"></i>
+            </button>
+
+            <!-- Selector de Multiplicador de Velocidad -->
+            <div class="flex items-center bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+                <button data-speed="0.5" class="speed-btn px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all">0.5x</button>
+                <button data-speed="1" class="speed-btn px-2.5 py-1 text-xs font-semibold rounded-lg bg-cyan-500/20 text-cyan-300 transition-all">1x</button>
+                <button data-speed="2" class="speed-btn px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all">2x</button>
+                <button data-speed="5" class="speed-btn px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all">5x</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Panel Lateral de Telemetría e Indicadores de Alineación -->
+    <aside class="absolute bottom-4 left-4 z-20 w-80 max-w-[calc(100vw-2rem)] glass-panel p-4 rounded-2xl hidden md:block border-slate-800">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-between">
+            <span>Telemetría Orbital</span>
+            <i class="fa-solid fa-satellite text-cyan-400 text-xs"></i>
+        </h3>
+        
+        <div class="space-y-2.5 text-xs">
+            <!-- Indicador de Porcentaje de Alineación Sizigia -->
+            <div>
+                <div class="flex justify-between text-slate-300 mb-1">
+                    <span>Alineación Sol-Tierra-Luna:</span>
+                    <span id="alignment-percentage" class="font-mono text-cyan-400 font-bold">12%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-700/50">
+                    <div id="alignment-bar" class="bg-gradient-to-r from-blue-500 via-cyan-400 to-amber-400 h-full w-[12%] transition-all duration-300"></div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center py-1 border-b border-slate-800/80 text-slate-300">
+                <span>Inclinación Órbita Lunar:</span>
+                <span class="font-mono text-slate-200">5.14°</span>
+            </div>
+
+            <div class="flex justify-between items-center py-1 border-b border-slate-800/80 text-slate-300">
+                <span>Distancia Media Tierra-Sol:</span>
+                <span class="font-mono text-amber-300">1.00 UA (149.6M km)</span>
+            </div>
+
+            <div class="flex justify-between items-center py-1 text-slate-300">
+                <span>Próximo Evento Proyectado:</span>
+                <span id="next-eclipse-date" class="font-mono text-amber-400 font-semibold">17 Feb 2026</span>
+            </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-800 flex items-center gap-2 text-[11px] text-slate-400">
+            <i class="fa-solid fa-hand-pointer text-cyan-400"></i>
+            <span>Arrastra el cursor sobre la pantalla para modificar la perspectiva 3D.</span>
+        </div>
+    </aside>
+
+    <!-- Tarjeta Flotante en la Esquina Superior Derecha (No obstruye la simulación central) -->
+    <div id="eclipse-modal" class="fixed top-20 right-4 z-40 w-96 max-w-[calc(100vw-2rem)] hidden transition-all duration-300">
+        <div class="glass-panel-gold rounded-2xl p-4 relative overflow-hidden card-slide-in shadow-2xl">
+            
+            <!-- Barra de Progreso del Temporizador de Pausa -->
+            <div class="w-full h-1 bg-slate-800 absolute top-0 left-0 right-0 overflow-hidden">
+                <div id="countdown-progress-bar" class="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 w-full progress-bar-fill"></div>
+            </div>
+
+            <!-- Encabezado de la Tarjeta con Badge y Tiempo Restante -->
+            <div class="flex items-center justify-between mb-2 pt-1 relative z-10">
+                <div class="flex items-center gap-2">
+                    <span id="eclipse-badge" class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase tracking-wider pulse-effect">
+                        <i class="fa-solid fa-circle-dot mr-1"></i> Eclipse Detectado
+                    </span>
+                    <span id="modal-date" class="text-[11px] text-slate-300 font-mono bg-slate-900/90 px-2 py-0.5 rounded border border-slate-800">12 AGO 2026</span>
+                </div>
+                
+                <!-- Indicador numérico de temporizador -->
+                <div class="text-right">
+                    <span id="timer-status-label" class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold leading-none mb-0.5">Auto-Continuar</span>
+                    <span id="pause-timer" class="text-xs font-black font-mono text-amber-400">4.0s</span>
+                </div>
+            </div>
+
+            <!-- Título Principal del Evento -->
+            <h2 id="modal-title" class="text-base font-black text-white tracking-wide mb-1 leading-snug">Eclipse Solar Total</h2>
+            
+            <!-- Bloque de Ubicación Geográfica Destacada -->
+            <div class="flex items-center gap-1.5 text-xs text-amber-300 bg-amber-950/40 border border-amber-500/30 px-2.5 py-1.5 rounded-lg mb-2">
+                <i class="fa-solid fa-location-dot text-amber-400 shrink-0"></i>
+                <span id="modal-location" class="font-medium text-[11px] leading-tight">Madrid, España y Océano Atlántico Norte (Coords: 40.4° N, 3.7° W)</span>
+            </div>
+
+            <!-- Descripción Científica Breve -->
+            <p id="modal-description" class="text-[11px] text-slate-300 leading-relaxed mb-3">
+                La Luna se interpone exactamente entre el Sol y la Tierra, bloqueando por completo la luz solar directa y proyectando su umbra.
+            </p>
+
+            <!-- Acercamiento Óptico / Canvas Secundario -->
+            <div class="relative w-full h-32 bg-slate-950 rounded-xl border border-slate-800/80 overflow-hidden flex items-center justify-center mb-3 shadow-inner">
+                <canvas id="zoomCanvas" class="w-full h-full"></canvas>
+                <div class="absolute bottom-1.5 right-2 text-[9px] text-slate-300 bg-slate-900/90 px-2 py-0.5 rounded border border-slate-700/60">
+                    <i class="fa-solid fa-magnifying-glass text-cyan-400 mr-1"></i> Vista de Alta Resolución
+                </div>
+            </div>
+
+            <!-- Botones de Interacción (Pausar / Continuar) -->
+            <div class="flex items-center justify-between gap-2 relative z-10 pt-1 border-t border-slate-800/80">
+                <!-- Botón de Congelado de Pantalla (Hold) -->
+                <button id="btn-toggle-hold" class="flex-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-1.5">
+                    <i id="icon-hold-btn" class="fa-solid fa-pause text-amber-400"></i>
+                    <span id="text-hold-btn">Mantener en Pantalla</span>
+                </button>
+
+                <!-- Botón de Reanudación Inmediata -->
+                <button id="btn-resume-now" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs tracking-wider transition-all shadow-md shadow-amber-500/20 flex items-center justify-center gap-1">
+                    <span>Continuar</span>
+                    <i class="fa-solid fa-play text-[10px]"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           CONSTANTES Y BASE DE DATOS DE ECLIPSES
+           ========================================================================== */
+        const DAYS_IN_YEAR = 365;
+        const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+        const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+        // Eventos astronómicos calculados para el ciclo simulado de 2026
+        const ECLIPSE_EVENTS = [
+            {
+                day: 48, // 17 de Febrero
+                type: "SOLAR_ANNULAR",
+                title: "Eclipse Solar Anular",
+                badge: "Solar Anular",
+                location: "Antártida y Sur de África (Coords: 68.3° S, 12.4° E)",
+                description: "La Luna está cerca de su apogeo orbital y no cubre completamente el disco solar, creando un espectacular 'Anillo de Fuego'.",
+                triggered: false
+            },
+            {
+                day: 62, // 3 de Marzo
+                type: "LUNAR_TOTAL",
+                title: "Eclipse Lunar Total",
+                badge: "Luna de Sangre",
+                location: "Océano Pacífico, Este de Asia y Américas (Coords: 12.1° N, 165.4° W)",
+                description: "La Tierra bloquea la luz solar directa hacia la Luna. La atmósfera terrestre refracta las longitudes de onda rojas, tiñendo el disco lunar.",
+                triggered: false
+            },
+            {
+                day: 224, // 12 de Agosto
+                type: "SOLAR_TOTAL",
+                title: "Eclipse Solar Total",
+                badge: "Solar Total",
+                location: "España (incl. Madrid), Islandia y Ártico (Coords: 65.2° N, 25.1° W)",
+                description: "Alineación sizigia perfecta. La sombra umbral de la Luna barre la Tierra, oscureciendo el cielo diurno y revelando la corona solar.",
+                triggered: false
+            },
+            {
+                day: 240, // 28 de Agosto
+                type: "LUNAR_PARTIAL",
+                title: "Eclipse Lunar Parcial",
+                badge: "Lunar Parcial",
+                badgeColor: "blue",
+                location: "Océano Atlántico, Europa Occidental y Américas (Coords: 18.5° S, 34.2° W)",
+                description: "Una fracción de la Luna penetra en la umbra terrestre, produciendo una sombra oscura bien definida en la superficie lunar.",
+                triggered: false
+            }
+        ];
+
+        /* ==========================================================================
+           ESTADO GLOBAL DE LA APLICACIÓN
+           ========================================================================== */
+        let state = {
+            isPlaying: true,
+            speedMultiplier: 1,
+            currentDay: 1,
+            isPausedByEclipse: false,
+            isHoldMode: false,
+            eclipseTimer: 4.0,
+            maxEclipseDuration: 4.0,
+            activeEclipseEvent: null,
+            viewAngleX: 0.35,
+            viewAngleY: 0,
+            isDragging: false,
+            lastMouseX: 0,
+            lastMouseY: 0
+        };
+
+        /* ==========================================================================
+           ELEMENTOS DEL DOM
+           ========================================================================== */
+        const canvas = document.getElementById('astroCanvas');
+        const ctx = canvas.getContext('2d');
+        const zoomCanvas = document.getElementById('zoomCanvas');
+        const zoomCtx = zoomCanvas.getContext('2d');
+
+        const btnTogglePlay = document.getElementById('btn-toggle-play');
+        const iconPlayPause = document.getElementById('icon-play-pause');
+        const btnResetYear = document.getElementById('btn-reset-year');
+        const speedButtons = document.querySelectorAll('.speed-btn');
+        const currentDateDisplay = document.getElementById('current-date-display');
+        const dayCounterDisplay = document.getElementById('day-counter-display');
+        const lunarPhaseDisplay = document.getElementById('lunar-phase-display');
+        const alignmentPercentage = document.getElementById('alignment-percentage');
+        const alignmentBar = document.getElementById('alignment-bar');
+        const nextEclipseDisplay = document.getElementById('next-eclipse-date');
+
+        // Elementos de la tarjeta informativa
+        const eclipseModal = document.getElementById('eclipse-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDate = document.getElementById('modal-date');
+        const modalLocation = document.getElementById('modal-location');
+        const modalDescription = document.getElementById('modal-description');
+        const modalBadge = document.getElementById('eclipse-badge');
+        const pauseTimerDisplay = document.getElementById('pause-timer');
+        const timerStatusLabel = document.getElementById('timer-status-label');
+        const countdownProgressBar = document.getElementById('countdown-progress-bar');
+        const btnToggleHold = document.getElementById('btn-toggle-hold');
+        const iconHoldBtn = document.getElementById('icon-hold-btn');
+        const textHoldBtn = document.getElementById('text-hold-btn');
+        const btnResumeNow = document.getElementById('btn-resume-now');
+
+        /* ==========================================================================
+           GENERADOR DE CAMPO ESTELAR
+           ========================================================================== */
+        let stars = [];
+        function initStarfield() {
+            stars = [];
+            const count = Math.floor((window.innerWidth * window.innerHeight) / 1600);
+            for (let i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * window.innerWidth,
+                    y: Math.random() * window.innerHeight,
+                    size: Math.random() * 1.8 + 0.3,
+                    alpha: Math.random() * 0.8 + 0.2,
+                    twinkleSpeed: Math.random() * 0.02 + 0.005,
+                    color: Math.random() > 0.8 ? '#a5f3fc' : (Math.random() > 0.6 ? '#fef08a' : '#ffffff')
+                });
+            }
+        }
+
+        // Ajuste dinámico de dimensiones de lienzo
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            initStarfield();
+
+            if (state.activeEclipseEvent && !eclipseModal.classList.contains('hidden')) {
+                updateZoomCanvasDimensions();
+                drawZoomEclipsePreview(state.activeEclipseEvent);
+            }
+        }
+
+        function updateZoomCanvasDimensions() {
+            const zWidth = zoomCanvas.clientWidth || 320;
+            const zHeight = zoomCanvas.clientHeight || 128;
+            zoomCanvas.width = zWidth * (window.devicePixelRatio || 1);
+            zoomCanvas.height = zHeight * (window.devicePixelRatio || 1);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        /* ==========================================================================
+           CONTROLES DE INTERACCIÓN Y NAVEGACIÓN TÁCTIL / RATÓN
+           ========================================================================== */
+        window.addEventListener('mousedown', (e) => {
+            if (e.target.tagName === 'CANVAS') {
+                state.isDragging = true;
+                state.lastMouseX = e.clientX;
+                state.lastMouseY = e.clientY;
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (state.isDragging) {
+                const deltaX = e.clientX - state.lastMouseX;
+                const deltaY = e.clientY - state.lastMouseY;
+                state.viewAngleY += deltaX * 0.005;
+                state.viewAngleX = Math.max(0.1, Math.min(1.2, state.viewAngleX + deltaY * 0.005));
+                state.lastMouseX = e.clientX;
+                state.lastMouseY = e.clientY;
+            }
+        });
+
+        window.addEventListener('mouseup', () => state.isDragging = false);
+
+        // Soporte para dispositivos móviles
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1 && e.target.tagName === 'CANVAS') {
+                state.isDragging = true;
+                state.lastMouseX = e.touches[0].clientX;
+                state.lastMouseY = e.touches[0].clientY;
+            }
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (state.isDragging && e.touches.length === 1) {
+                const deltaX = e.touches[0].clientX - state.lastMouseX;
+                const deltaY = e.touches[0].clientY - state.lastMouseY;
+                state.viewAngleY += deltaX * 0.005;
+                state.viewAngleX = Math.max(0.1, Math.min(1.2, state.viewAngleX + deltaY * 0.005));
+                state.lastMouseX = e.touches[0].clientX;
+                state.lastMouseY = e.touches[0].clientY;
+            }
+        });
+
+        window.addEventListener('touchend', () => state.isDragging = false);
+
+        /* ==========================================================================
+           FUNCIONES AUXILIARES DE CÁLCULO ASTRONÓMICO
+           ========================================================================== */
+        function dayToDateString(dayNumber) {
+            let day = Math.floor(dayNumber);
+            let monthIndex = 0;
+            for (let i = 0; i < DAYS_PER_MONTH.length; i++) {
+                if (day <= DAYS_PER_MONTH[i]) {
+                    monthIndex = i;
+                    break;
+                }
+                day -= DAYS_PER_MONTH[i];
+            }
+            if (day <= 0) day = 1;
+            return `${day < 10 ? '0' + day : day} ${MONTHS[monthIndex].toUpperCase()} 2026`;
+        }
+
+        function getLunarPhaseName(lunarAngleRad) {
+            const normalized = ((lunarAngleRad % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+            const degrees = (normalized * 180) / Math.PI;
+
+            if (degrees >= 337.5 || degrees < 22.5) return "Nueva";
+            if (degrees >= 22.5 && degrees < 67.5) return "Creciente";
+            if (degrees >= 67.5 && degrees < 112.5) return "Cuarto Creciente";
+            if (degrees >= 112.5 && degrees < 157.5) return "Gibosa Creciente";
+            if (degrees >= 157.5 && degrees < 202.5) return "Llena";
+            if (degrees >= 202.5 && degrees < 247.5) return "Gibosa Menguante";
+            if (degrees >= 247.5 && degrees < 292.5) return "Cuarto Menguante";
+            return "Menguante";
+        }
+
+        /* ==========================================================================
+           RENDERIZADO DEL ESPACIO Y RENDERIZADO PRINCIPAL DE ÓRBITAS
+           ========================================================================== */
+        function drawSpaceBackground() {
+            ctx.fillStyle = '#030712';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Gradientes cósmicos de fondo
+            const grad1 = ctx.createRadialGradient(canvas.width * 0.3, canvas.height * 0.3, 50, canvas.width * 0.3, canvas.height * 0.3, 450);
+            grad1.addColorStop(0, 'rgba(30, 27, 75, 0.3)');
+            grad1.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad1;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const grad2 = ctx.createRadialGradient(canvas.width * 0.7, canvas.height * 0.7, 50, canvas.width * 0.7, canvas.height * 0.7, 500);
+            grad2.addColorStop(0, 'rgba(12, 74, 110, 0.25)');
+            grad2.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad2;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujado de estrellas con titileo
+            stars.forEach(star => {
+                star.alpha += Math.sin(Date.now() * star.twinkleSpeed) * 0.01;
+                const alpha = Math.max(0.1, Math.min(0.9, star.alpha));
+                ctx.fillStyle = star.color;
+                ctx.globalAlpha = alpha;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1.0;
+        }
+
+        function drawSimulation() {
+            drawSpaceBackground();
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Escala adaptativa para las órbitas
+            const minDim = Math.min(canvas.width, canvas.height);
+            const earthOrbitRadiusX = minDim * 0.34;
+            const earthOrbitRadiusY = earthOrbitRadiusX * state.viewAngleX;
+            const moonOrbitRadiusX = Math.max(38, minDim * 0.07);
+            const moonOrbitRadiusY = moonOrbitRadiusX * state.viewAngleX;
+
+            // Traslación terrestre (1 revolución = 365 días)
+            const earthAngle = ((state.currentDay - 1) / DAYS_IN_YEAR) * Math.PI * 2 - Math.PI / 2;
+            
+            // Traslación lunar (~13.37 revoluciones por año)
+            const moonAngle = earthAngle + (state.currentDay / 27.3) * Math.PI * 2;
+
+            // Posicionamiento de la Tierra en proyección 3D
+            const earthX = centerX + Math.cos(earthAngle + state.viewAngleY) * earthOrbitRadiusX;
+            const earthY = centerY + Math.sin(earthAngle + state.viewAngleY) * earthOrbitRadiusY;
+
+            // Posicionamiento de la Luna respecto a la Tierra
+            const moonX = earthX + Math.cos(moonAngle) * moonOrbitRadiusX;
+            const moonY = earthY + Math.sin(moonAngle) * moonOrbitRadiusY;
+
+            // 1. Órbita Terrestre
+            ctx.save();
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY, earthOrbitRadiusX, earthOrbitRadiusY, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.22)';
+            ctx.setLineDash([4, 6]);
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.restore();
+
+            // 2. Sol y Resplandor de la Corona
+            ctx.save();
+            const sunCorona = ctx.createRadialGradient(centerX, centerY, 15, centerX, centerY, 90);
+            sunCorona.addColorStop(0, 'rgba(255, 200, 80, 0.95)');
+            sunCorona.addColorStop(0.3, 'rgba(245, 158, 11, 0.45)');
+            sunCorona.addColorStop(0.7, 'rgba(217, 119, 6, 0.15)');
+            sunCorona.addColorStop(1, 'transparent');
+            ctx.fillStyle = sunCorona;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 90, 0, Math.PI * 2);
+            ctx.fill();
+
+            const sunCore = ctx.createRadialGradient(centerX - 8, centerY - 8, 2, centerX, centerY, 30);
+            sunCore.addColorStop(0, '#ffffff');
+            sunCore.addColorStop(0.3, '#fef08a');
+            sunCore.addColorStop(0.7, '#f59e0b');
+            sunCore.addColorStop(1, '#d97706');
+            ctx.fillStyle = sunCore;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 28, 0, Math.PI * 2);
+            ctx.shadowColor = '#fbbf24';
+            ctx.shadowBlur = 25;
+            ctx.fill();
+            ctx.restore();
+
+            // 3. Vector de Iluminación Solar
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(earthX, earthY);
+            ctx.strokeStyle = 'rgba(251, 191, 36, 0.12)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.restore();
+
+            // 4. Órbita Lunar
+            ctx.save();
+            ctx.beginPath();
+            ctx.ellipse(earthX, earthY, moonOrbitRadiusX, moonOrbitRadiusY, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.setLineDash([2, 4]);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.restore();
+
+            // 5. Cono de Sombra Umbral de la Tierra
+            const dx = earthX - centerX;
+            const dy = earthY - centerY;
+            const shadowAngle = Math.atan2(dy, dx);
+            const shadowLength = 150;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(earthX, earthY);
+            ctx.lineTo(earthX + Math.cos(shadowAngle - 0.12) * shadowLength, earthY + Math.sin(shadowAngle - 0.12) * shadowLength);
+            ctx.lineTo(earthX + Math.cos(shadowAngle + 0.12) * shadowLength, earthY + Math.sin(shadowAngle + 0.12) * shadowLength);
+            ctx.closePath();
+            const shadowGrad = ctx.createLinearGradient(earthX, earthY, earthX + Math.cos(shadowAngle) * shadowLength, earthY + Math.sin(shadowAngle) * shadowLength);
+            shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.75)');
+            shadowGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = shadowGrad;
+            ctx.fill();
+            ctx.restore();
+
+            // 6. Planeta Tierra
+            ctx.save();
+            const earthRadius = 15;
+
+            // Atmósfera terrestre
+            ctx.beginPath();
+            ctx.arc(earthX, earthY, earthRadius + 4, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.28)';
+            ctx.fill();
+
+            // Cuerpo oceánico
+            ctx.beginPath();
+            ctx.arc(earthX, earthY, earthRadius, 0, Math.PI * 2);
+            ctx.fillStyle = '#1d4ed8';
+            ctx.fill();
+
+            // Continentes en rotación
+            const rotationOffset = (state.currentDay * 0.2) % (Math.PI * 2);
+            ctx.fillStyle = '#15803d';
+            ctx.beginPath();
+            ctx.arc(earthX + Math.cos(rotationOffset) * 5, earthY + Math.sin(rotationOffset) * 5, 5, 0, Math.PI * 2);
+            ctx.arc(earthX - Math.cos(rotationOffset + 1) * 7, earthY - Math.sin(rotationOffset + 1) * 7, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Sombra nocturna de la Tierra
+            const earthSunAngle = Math.atan2(centerY - earthY, centerX - earthX);
+            const nightGrad = ctx.createRadialGradient(
+                earthX + Math.cos(earthSunAngle + Math.PI) * 7,
+                earthY + Math.sin(earthSunAngle + Math.PI) * 7,
+                2,
+                earthX,
+                earthY,
+                earthRadius
+            );
+            nightGrad.addColorStop(0, 'rgba(3, 7, 18, 0.95)');
+            nightGrad.addColorStop(0.7, 'rgba(3, 7, 18, 0.6)');
+            nightGrad.addColorStop(1, 'transparent');
+
+            ctx.beginPath();
+            ctx.arc(earthX, earthY, earthRadius + 0.5, 0, Math.PI * 2);
+            ctx.fillStyle = nightGrad;
+            ctx.fill();
+            ctx.restore();
+
+            // 7. Luna
+            ctx.save();
+            const moonRadius = 5.5;
+            ctx.beginPath();
+            ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
+            ctx.fillStyle = '#f1f5f9';
+            ctx.shadowColor = 'rgba(255,255,255,0.5)';
+            ctx.shadowBlur = 6;
+            ctx.fill();
+
+            // Sombra de la cara oculta del Sol
+            const moonSunAngle = Math.atan2(centerY - moonY, centerX - moonX);
+            const moonNightGrad = ctx.createRadialGradient(
+                moonX + Math.cos(moonSunAngle + Math.PI) * 2.5,
+                moonY + Math.sin(moonSunAngle + Math.PI) * 2.5,
+                1,
+                moonX,
+                moonY,
+                moonRadius
+            );
+            moonNightGrad.addColorStop(0, 'rgba(15, 23, 42, 0.95)');
+            moonNightGrad.addColorStop(0.8, 'rgba(15, 23, 42, 0.4)');
+            moonNightGrad.addColorStop(1, 'transparent');
+
+            ctx.beginPath();
+            ctx.arc(moonX, moonY, moonRadius + 0.2, 0, Math.PI * 2);
+            ctx.fillStyle = moonNightGrad;
+            ctx.fill();
+            ctx.restore();
+
+            // Cálculo de telemetría e inclinación
+            const sunEarthVec = { x: earthX - centerX, y: earthY - centerY };
+            const earthMoonVec = { x: moonX - earthX, y: moonY - earthY };
+
+            const angle1 = Math.atan2(sunEarthVec.y, sunEarthVec.x);
+            const angle2 = Math.atan2(earthMoonVec.y, earthMoonVec.x);
+
+            let diff = Math.abs(angle1 - angle2) % Math.PI;
+            if (diff > Math.PI / 2) diff = Math.PI - diff;
+
+            const alignPct = Math.max(0, Math.min(100, Math.floor((1 - (diff / (Math.PI / 2))) * 100)));
+            alignmentPercentage.textContent = `${alignPct}%`;
+            alignmentBar.style.width = `${alignPct}%`;
+
+            const phaseAngle = Math.atan2(moonY - earthY, moonX - earthX) - Math.atan2(centerY - earthY, centerX - earthX);
+            lunarPhaseDisplay.textContent = getLunarPhaseName(phaseAngle);
+        }
+
+        /* ==========================================================================
+           RENDERIZADO DEL LIENZO DE ACERCAMIENTO ÓPTICO (ZOOM CANVAS)
+           ========================================================================== */
+        function drawZoomEclipsePreview(event) {
+            const w = zoomCanvas.width || 320;
+            const h = zoomCanvas.height || 128;
+            const cx = w / 2;
+            const cy = h / 2;
+
+            zoomCtx.clearRect(0, 0, w, h);
+            zoomCtx.fillStyle = '#020617';
+            zoomCtx.fillRect(0, 0, w, h);
+
+            if (event.type === 'SOLAR_TOTAL' || event.type === 'SOLAR_ANNULAR') {
+                const sunR = Math.max(8, Math.min(w, h) * 0.26);
+                const moonR = event.type === 'SOLAR_TOTAL' ? sunR * 1.02 : sunR * 0.91;
+
+                const r0 = Math.max(0, sunR - 4);
+                const r1 = Math.max(r0 + 1, sunR * 2.1);
+                
+                const corona = zoomCtx.createRadialGradient(cx, cy, r0, cx, cy, r1);
+                corona.addColorStop(0, 'rgba(255, 235, 150, 0.95)');
+                corona.addColorStop(0.3, 'rgba(251, 191, 36, 0.55)');
+                corona.addColorStop(0.7, 'rgba(217, 119, 6, 0.2)');
+                corona.addColorStop(1, 'transparent');
+                
+                zoomCtx.fillStyle = corona;
+                zoomCtx.beginPath();
+                zoomCtx.arc(cx, cy, r1, 0, Math.PI * 2);
+                zoomCtx.fill();
+
+                zoomCtx.fillStyle = '#fef08a';
+                zoomCtx.beginPath();
+                zoomCtx.arc(cx, cy, sunR, 0, Math.PI * 2);
+                zoomCtx.fill();
+
+                zoomCtx.fillStyle = '#030712';
+                zoomCtx.beginPath();
+                zoomCtx.arc(cx, cy, moonR, 0, Math.PI * 2);
+                zoomCtx.fill();
+
+                if (event.type === 'SOLAR_ANNULAR') {
+                    zoomCtx.strokeStyle = '#fbbf24';
+                    zoomCtx.lineWidth = 4;
+                    zoomCtx.shadowColor = '#f59e0b';
+                    zoomCtx.shadowBlur = 14;
+                    zoomCtx.stroke();
+                }
+            } else {
+                const moonR = Math.max(8, Math.min(w, h) * 0.28);
+
+                zoomCtx.fillStyle = event.type === 'LUNAR_TOTAL' ? '#7f1d1d' : '#64748b';
+                zoomCtx.beginPath();
+                zoomCtx.arc(cx, cy, moonR, 0, Math.PI * 2);
+                zoomCtx.fill();
+
+                const r0 = Math.max(0, moonR * 0.2);
+                const r1 = Math.max(r0 + 1, moonR * 1.25);
+                const shadowGrad = zoomCtx.createRadialGradient(
+                    cx - (event.type === 'LUNAR_PARTIAL' ? moonR * 0.6 : 0),
+                    cy,
+                    r0,
+                    cx,
+                    cy,
+                    r1
+                );
+                shadowGrad.addColorStop(0, 'rgba(3, 7, 18, 0.96)');
+                shadowGrad.addColorStop(0.8, event.type === 'LUNAR_TOTAL' ? 'rgba(153, 27, 27, 0.85)' : 'rgba(30, 41, 59, 0.65)');
+                shadowGrad.addColorStop(1, 'transparent');
+
+                zoomCtx.fillStyle = shadowGrad;
+                zoomCtx.beginPath();
+                zoomCtx.arc(cx, cy, moonR, 0, Math.PI * 2);
+                zoomCtx.fill();
+
+                if (event.type === 'LUNAR_TOTAL') {
+                    zoomCtx.strokeStyle = 'rgba(239, 68, 68, 0.7)';
+                    zoomCtx.lineWidth = 2.5;
+                    zoomCtx.shadowColor = '#ef4444';
+                    zoomCtx.shadowBlur = 12;
+                    zoomCtx.beginPath();
+                    zoomCtx.arc(cx, cy, moonR, 0, Math.PI * 2);
+                    zoomCtx.stroke();
+                }
+            }
+        }
+
+        /* ==========================================================================
+           GESTIÓN DE EVENTOS DE ECLIPSE Y CONTROL DE TIEMPO
+           ========================================================================== */
+        function checkEclipseEvent() {
+            if (state.isPausedByEclipse) return;
+
+            const currentIntDay = Math.floor(state.currentDay);
+            const foundEvent = ECLIPSE_EVENTS.find(e => e.day === currentIntDay);
+
+            if (foundEvent && !foundEvent.triggered) {
+                foundEvent.triggered = true;
+                triggerEclipsePause(foundEvent);
+            }
+        }
+
+        function triggerEclipsePause(eventData) {
+            state.isPausedByEclipse = true;
+            state.activeEclipseEvent = eventData;
+            state.isHoldMode = false;
+            state.eclipseTimer = 4.0;
+            state.maxEclipseDuration = 4.0;
+
+            updateHoldButtonUI();
+
+            modalTitle.textContent = eventData.title;
+            modalDate.textContent = dayToDateString(eventData.day);
+            modalLocation.textContent = eventData.location;
+            modalDescription.textContent = eventData.description;
+            modalBadge.textContent = eventData.badge;
+
+            if (eventData.type.startsWith('SOLAR')) {
+                modalBadge.className = "px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase tracking-wider pulse-effect";
+            } else {
+                modalBadge.className = "px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 uppercase tracking-wider pulse-effect";
+            }
+
+            // Mostrar primero la tarjeta para calcular dimensiones reales del contenedor
+            eclipseModal.classList.remove('hidden');
+
+            updateZoomCanvasDimensions();
+            drawZoomEclipsePreview(eventData);
+        }
+
+        function toggleHoldState() {
+            state.isHoldMode = !state.isHoldMode;
+            updateHoldButtonUI();
+        }
+
+        function updateHoldButtonUI() {
+            if (state.isHoldMode) {
+                timerStatusLabel.textContent = "Modo Congelado";
+                timerStatusLabel.className = "text-[9px] uppercase tracking-wider text-cyan-400 block font-bold leading-none mb-0.5";
+                pauseTimerDisplay.textContent = "PAUSA";
+                pauseTimerDisplay.className = "text-xs font-black font-mono text-cyan-300";
+
+                iconHoldBtn.className = "fa-solid fa-play text-cyan-400";
+                textHoldBtn.textContent = "Reanudar Conteo";
+                btnToggleHold.className = "flex-1 px-3 py-1.5 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/50 text-cyan-200 text-xs font-bold transition-all flex items-center justify-center gap-1.5 glow-cyan";
+            } else {
+                timerStatusLabel.textContent = "Auto-Continuar";
+                timerStatusLabel.className = "text-[9px] uppercase tracking-wider text-slate-400 block font-semibold leading-none mb-0.5";
+                pauseTimerDisplay.textContent = `${Math.max(0, state.eclipseTimer).toFixed(1)}s`;
+                pauseTimerDisplay.className = "text-xs font-black font-mono text-amber-400";
+
+                iconHoldBtn.className = "fa-solid fa-pause text-amber-400";
+                textHoldBtn.textContent = "Mantener en Pantalla";
+                btnToggleHold.className = "flex-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-1.5";
+            }
+        }
+
+        function resumeFromEclipse() {
+            state.isPausedByEclipse = false;
+            state.isHoldMode = false;
+            eclipseModal.classList.add('hidden');
+            state.activeEclipseEvent = null;
+        }
+
+        /* ==========================================================================
+           BUCLE PRINCIPAL DE ANIMACIÓN
+           ========================================================================== */
+        let lastTimestamp = 0;
+        function animate(timestamp) {
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            const deltaTime = (timestamp - lastTimestamp) / 1000;
+            lastTimestamp = timestamp;
+
+            if (state.isPlaying && !state.isPausedByEclipse) {
+                state.currentDay += deltaTime * 12 * state.speedMultiplier;
+
+                if (state.currentDay > DAYS_IN_YEAR) {
+                    state.currentDay = 1;
+                    ECLIPSE_EVENTS.forEach(e => e.triggered = false);
+                }
+
+                checkEclipseEvent();
+            } else if (state.isPausedByEclipse) {
+                if (!state.isHoldMode) {
+                    state.eclipseTimer -= deltaTime;
+                    pauseTimerDisplay.textContent = `${Math.max(0, state.eclipseTimer).toFixed(1)}s`;
+
+                    const progressPct = Math.max(0, (state.eclipseTimer / state.maxEclipseDuration) * 100);
+                    countdownProgressBar.style.width = `${progressPct}%`;
+
+                    if (state.eclipseTimer <= 0) {
+                        resumeFromEclipse();
+                    }
+                } else {
+                    countdownProgressBar.style.width = '100%';
+                }
+            }
+
+            currentDateDisplay.textContent = dayToDateString(state.currentDay);
+            dayCounterDisplay.textContent = `Día ${Math.floor(state.currentDay)} / 365`;
+
+            const upcoming = ECLIPSE_EVENTS.find(e => e.day >= Math.floor(state.currentDay)) || ECLIPSE_EVENTS[0];
+            nextEclipseDisplay.textContent = dayToDateString(upcoming.day);
+
+            drawSimulation();
+
+            requestAnimationFrame(animate);
+        }
+
+        /* ==========================================================================
+           INICIALIZACIÓN Y EVENT LISTENERS
+           ========================================================================== */
+        btnTogglePlay.addEventListener('click', () => {
+            state.isPlaying = !state.isPlaying;
+            if (state.isPlaying) {
+                iconPlayPause.className = "fa-solid fa-pause text-base";
+            } else {
+                iconPlayPause.className = "fa-solid fa-play text-base ml-0.5";
+            }
+        });
+
+        btnResetYear.addEventListener('click', () => {
+            state.currentDay = 1;
+            ECLIPSE_EVENTS.forEach(e => e.triggered = false);
+            if (state.isPausedByEclipse) resumeFromEclipse();
+        });
+
+        speedButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                speedButtons.forEach(b => {
+                    b.className = "speed-btn px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all";
+                });
+                btn.className = "speed-btn px-2.5 py-1 text-xs font-semibold rounded-lg bg-cyan-500/20 text-cyan-300 transition-all";
+                state.speedMultiplier = parseFloat(btn.dataset.speed);
+            });
+        });
+
+        btnToggleHold.addEventListener('click', toggleHoldState);
+        btnResumeNow.addEventListener('click', resumeFromEclipse);
+
+        window.onload = function () {
+            resizeCanvas();
+            requestAnimationFrame(animate);
+        };
+    </script>
+</body>
+</html>
