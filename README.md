@@ -76,15 +76,6 @@ No se requieren instalaciones complejas de `node_modules` ni servidores de desar
    ```
 3. Abre el archivo `index.html` en cualquier navegador moderno de tu preferencia.
 
----
-
-## 📸 Agregar la Vista Previa (`preview.png`)
-
-Para que la imagen de portada aparezca en tu README:
-1. Abre tu simulador interactivo en el navegador.
-2. Toma una captura de pantalla completa del simulador en un momento donde la alineación astronómica sea visible.
-3. Guarda la imagen con el nombre exacto **`preview.png`** en la carpeta raíz de tu repositorio.
-4. Realiza un `git push` o súbela desde la interfaz web de GitHub.
 
 ---
 
