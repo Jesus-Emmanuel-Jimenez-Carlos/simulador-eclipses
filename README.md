@@ -70,18 +70,6 @@ El proyecto ha sido concebido bajo los principios de **Zero External Dependencie
 
 ---
 
-## 🚀 Despliegue Rápido en GitHub Pages
-
-Para publicar este proyecto en tu perfil de GitHub y mostrarlo como demostración interactiva:
-
-1. **Crea un nuevo repositorio** en tu cuenta de GitHub (ejemplo: `simulador-eclipses`).
-2. Sube el archivo `index.html` y este `README.md` a la rama principal (`main`).
-3. Ve a **Settings (Configuración)** > **Pages**.
-4. En **Source**, selecciona `Deploy from a branch` y elige la rama `main` / carpeta `/(root)`.
-5. Haz clic en **Save**. ¡Tu simulación estará lista en minutos en la URL `https://tu-usuario.github.io/simulador-eclipses`!
-
----
-
 ## 💻 Desarrollo Local
 
 No se requiere ningún instalador de paquetes (`npm`, `yarn` o servidores dedicados). Simplemente clona el repositorio y abre el archivo en cualquier navegador moderno:
